@@ -16,12 +16,32 @@ const sanitizeUser = (user)=>({
 });
 class AuthController {
     async register (req,res){
-        const { fullName, email, password } = req.body;
+        try{
+             const { fullName, email, password } = req.body;
         if(!fullName || !email || !password){
             return res.status (400).json({message:"fullName, email and password are required"})
         }
         if (password.length < 6){
-            return res.status(201)
+            return res.status(400).json({message:"password must be at least 6 characters "})
+
         }
-    }
+        const normalizedEmail =  email.trim().tolowerCase();
+        const existingUser = await User.findAll({ where :{email:normalizedEmail}});
+        if (existingUser) {
+            return res.status(400).json({message:"email deja utilisé"})
+        }
+        const hashedPassword = await bcrypt.hash(password,10)
+        const user = await User.create({
+            fullName:fullName.trim(),
+            email:normalizedEmail,
+            password:hashedPassword
+        });
+        const token = generateToken(user.id);
+        return res.status
+
+    }catch (error){console.log("error")}
+    
+        }
+        
+       
 }
