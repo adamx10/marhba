@@ -37,11 +37,52 @@ class AuthController {
             password:hashedPassword
         });
         const token = generateToken(user.id);
-        return res.status
+        return res.status(201).json({message:token,
+            user:sanitizeUser(user),});
 
-    }catch (error){console.log("error")}
+    }catch (error){console.error("error")};
+    return res.status(500).json({message:"il ya un probleme , essayer"})
     
         }
+        async login (res,req){
+    try {
+        const {email,password} = req.body;
+        if (!email || !password){
+            return res.status(400).json({message:"email et password are required"});
+        }
+        const normalizedEmail = email.trim().tolowerCase();
+        const user = await User.findOne({
+            where : { email : normalizedEmail}
+        });
+        if (!user){
+            return res.status(401).json({messsage:"inavalid "})
+        } 
+        const token = generateToken(user.id);
+        return res.status(200).json({token,
+            user :sanitizeUser(user),
+        });
         
-       
+    } catch (error) {
+       console.error("login error : ",error);
+       return res.status(500).json({message:"il ya un probleme , essayer encore"})
 }
+
+        
+    }
+    async me (req,res){
+         try {
+      // req.user.id khass ykon set mn middleware d authentication (verify JWT)
+      const user = await User.findByPk(req.user.id);
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      return res.status(200).json({ user: sanitizeUser(user) });
+    } catch (error) {
+      console.error("Me error:", error);
+      return res.status(500).json({ message: "Something went wrong, please try again" });
+    }
+  }
+    }
+export default new AuthController();
