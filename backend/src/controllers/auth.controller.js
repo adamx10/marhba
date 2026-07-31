@@ -9,11 +9,14 @@ const generateToken =(userId )=>{
         expiresIn : process.env.JWT_EXPIRES_IN,
     });
 };
+// hadi bash n identifiw athentification
 const sanitizeUser = (user)=>({
     id:user.id,
     fullName:user.fullName,
     email:user.email,
 });
+// hna ste3mlna oop bash njem3o
+
 class AuthController {
     async register (req,res){
         try{
