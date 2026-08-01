@@ -1,0 +1,216 @@
+openapi: 3.0.3
+info:
+  title: Auth API
+  version: 1.0.0
+  description: API d'authentification Express pour l'inscription, la connexion et la récupération du profil utilisateur.
+servers:
+  - url: http://localhost:1010
+    description: Serveur de développement local
+paths:
+  /api/auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Créer un nouveau compte utilisateur
+      description: Enregistre un nouvel utilisateur avec son nom complet, son email et son mot de passe.
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            examples:
+              default:
+                summary: Exemple d'inscription
+                value:
+                  fullName: Amina Bensaid
+                  email: amina@example.com
+                  password: Azerty123!
+      responses:
+        '201':
+          description: Utilisateur créé avec succès.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+              examples:
+                success:
+                  summary: Réponse de création de compte
+                  value:
+                    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImlhdCI6MTcwMDAwMDAwMH0.signature
+                    user:
+                      id: 1
+                      fullName: Amina Bensaid
+                      email: amina@example.com
+        '400':
+          description: Validation échouée ou email déjà utilisé.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                validationError:
+                  summary: Données invalides
+                  value:
+                    error: Veuillez fournir un email valide.
+                duplicateEmail:
+                  summary: Email déjà utilisé
+                  value:
+                    error: Cet email est déjà utilisé.
+  /api/auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Connecter un utilisateur
+      description: Authentifie un utilisateur avec son email et son mot de passe.
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              default:
+                summary: Exemple de connexion
+                value:
+                  email: amina@example.com
+                  password: Azerty123!
+      responses:
+        '200':
+          description: Connexion réussie.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+              examples:
+                success:
+                  summary: Réponse de connexion
+                  value:
+                    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImlhdCI6MTcwMDAwMDAwMH0.signature
+                    user:
+                      id: 1
+                      fullName: Amina Bensaid
+                      email: amina@example.com
+        '401':
+          description: Identifiants invalides.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidCredentials:
+                  summary: Mauvais identifiants
+                  value:
+                    error: Email ou mot de passe incorrect
+  /api/auth/me:
+    get:
+      tags:
+        - Auth
+      summary: Obtenir les informations de l'utilisateur connecté
+      description: Récupère le profil de l'utilisateur à partir du jeton JWT fourni dans l'en-tête Authorization.
+      operationId: getCurrentUser
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Profil utilisateur récupéré avec succès.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeResponse'
+              examples:
+                success:
+                  summary: Profil utilisateur
+                  value:
+                    user:
+                      id: 1
+                      fullName: Amina Bensaid
+                      email: amina@example.com
+        '401':
+          description: Token manquant ou invalide.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingToken:
+                  summary: Token absent
+                  value:
+                    error: Token manquant.
+                invalidToken:
+                  summary: Token invalide
+                  value:
+                    error: Token invalide.
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    RegisterRequest:
+      type: object
+      required:
+        - fullName
+        - email
+        - password
+      properties:
+        fullName:
+          type: string
+          example: Amina Bensaid
+        email:
+          type: string
+          format: email
+          example: amina@example.com
+        password:
+          type: string
+          format: password
+          example: Azerty123!
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: amina@example.com
+        password:
+          type: string
+          format: password
+          example: Azerty123!
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        fullName:
+          type: string
+          example: Amina Bensaid
+        email:
+          type: string
+          format: email
+          example: amina@example.com
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImlhdCI6MTcwMDAwMDAwMH0.signature
+        user:
+          $ref: '#/components/schemas/User'
+    MeResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Email ou mot de passe incorrect
