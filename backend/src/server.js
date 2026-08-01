@@ -1,5 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
+import { apiReference } from "@scalar/express-api-reference";
 import sequelize from "./config/database.js";
 import logger from "./middlewares/logger.middleware.js";
 import errorMiddleware from "./middlewares/error.middleware.js";
@@ -8,10 +9,20 @@ import authRoutes from "./routes/auth.routes.js";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 1010;
+const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(logger);
+
+app.use("/openapi.yaml", express.static("openapi.yaml"));
+app.use(
+  "/docs",
+  apiReference({
+    spec: {
+      url: "/openapi.yaml",
+    },
+  })
+);
 
 app.use("/api/auth", authRoutes);
 
@@ -27,6 +38,7 @@ const startServer = async () => {
 
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
+      console.log(`Docs available at http://localhost:${PORT}/docs`);
     });
   } catch (error) {
     console.error("Unable to start server:", error);
