@@ -1,21 +1,54 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useAuthStore } from '../../store/authStore';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 
 export default function RegisterScreen() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
   const { register, isLoading } = useAuthStore();
+  const router = useRouter();
 
   const handleRegister = async () => {
     setError(null);
+    setFieldErrors({});
+
+    let hasError = false;
+    const newFieldErrors = {};
+    
+    if (!fullName) {
+      newFieldErrors.fullName = "Full name is required";
+      hasError = true;
+    }
+    if (!email) {
+      newFieldErrors.email = "Email is required";
+      hasError = true;
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      newFieldErrors.email = "Please enter a valid email address";
+      hasError = true;
+    }
+    if (!password) {
+      newFieldErrors.password = "Password is required";
+      hasError = true;
+    }
+
+    if (hasError) {
+      setFieldErrors(newFieldErrors);
+      return;
+    }
+
     try {
       await register(fullName, email, password);
+      router.replace('/(auth)/login');
     } catch (err) {
-      setError(err.response?.data?.error || 'An error occurred during registration.');
+      if (err.message === 'Email already exists') {
+        setFieldErrors({ email: err.message });
+      } else {
+        setError(err.message);
+      }
     }
   };
 
@@ -27,19 +60,20 @@ export default function RegisterScreen() {
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Full Name</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, fieldErrors.fullName && styles.inputError]}
             placeholder="Enter your full name"
             placeholderTextColor="#8f6f6e"
             value={fullName}
             onChangeText={setFullName}
             editable={!isLoading}
           />
+          {fieldErrors.fullName && <Text style={styles.fieldErrorText}>{fieldErrors.fullName}</Text>}
         </View>
 
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Email</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, fieldErrors.email && styles.inputError]}
             placeholder="Enter your email"
             placeholderTextColor="#8f6f6e"
             value={email}
@@ -48,12 +82,13 @@ export default function RegisterScreen() {
             autoCapitalize="none"
             editable={!isLoading}
           />
+          {fieldErrors.email && <Text style={styles.fieldErrorText}>{fieldErrors.email}</Text>}
         </View>
 
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Password</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, fieldErrors.password && styles.inputError]}
             placeholder="Create a password"
             placeholderTextColor="#8f6f6e"
             value={password}
@@ -61,6 +96,7 @@ export default function RegisterScreen() {
             secureTextEntry
             editable={!isLoading}
           />
+          {fieldErrors.password && <Text style={styles.fieldErrorText}>{fieldErrors.password}</Text>}
         </View>
 
         {error && <Text style={styles.errorText}>{error}</Text>}
@@ -124,6 +160,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     fontSize: 16,
     color: '#271717',
+  },
+  inputError: {
+    borderColor: '#ba1a1a',
+  },
+  fieldErrorText: {
+    color: '#ba1a1a',
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
   },
   errorText: {
     color: '#ba1a1a',

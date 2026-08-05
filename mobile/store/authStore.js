@@ -6,7 +6,7 @@ export const useAuthStore = create((set) => ({
   user: null,
   token: null,
   isAuthenticated: false,
-  isLoading: true,
+  isLoading: false,
 
   restoreSession: async () => {
     set({ isLoading: true });
@@ -34,10 +34,11 @@ export const useAuthStore = create((set) => ({
   register: async (fullName, email, password) => {
     set({ isLoading: true });
     try {
-      const response = await api.post('/auth/register', { fullName, email, password });
-      const { token, user } = response.data;
-      await SecureStore.setItemAsync('token', token);
-      set({ user, token, isAuthenticated: true });
+      await api.post('/auth/register', { fullName, email, password });
+      // Note: We don't save the token or set isAuthenticated here
+      // so the user is forced to log in manually after signing up.
+    } catch (error) {
+      throw new Error(error.response?.data?.error || 'Registration failed');
     } finally {
       set({ isLoading: false });
     }
@@ -50,6 +51,8 @@ export const useAuthStore = create((set) => ({
       const { token, user } = response.data;
       await SecureStore.setItemAsync('token', token);
       set({ user, token, isAuthenticated: true });
+    } catch (error) {
+      throw new Error(error.response?.data?.error || 'Login failed');
     } finally {
       set({ isLoading: false });
     }

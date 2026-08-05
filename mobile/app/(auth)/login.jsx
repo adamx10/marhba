@@ -7,14 +7,37 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
   const { login, isLoading } = useAuthStore();
 
   const handleLogin = async () => {
     setError(null);
+    setFieldErrors({});
+
+    let hasError = false;
+    const newFieldErrors = {};
+    
+    if (!email) {
+      newFieldErrors.email = "Email is required";
+      hasError = true;
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      newFieldErrors.email = "Please enter a valid email address";
+      hasError = true;
+    }
+    if (!password) {
+      newFieldErrors.password = "Password is required";
+      hasError = true;
+    }
+
+    if (hasError) {
+      setFieldErrors(newFieldErrors);
+      return;
+    }
+
     try {
       await login(email, password);
     } catch (err) {
-      setError(err.response?.data?.error || 'An error occurred during login.');
+      setError(err.message);
     }
   };
 
@@ -26,7 +49,7 @@ export default function LoginScreen() {
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Email</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, fieldErrors.email && styles.inputError]}
             placeholder="Enter your email"
             placeholderTextColor="#8f6f6e"
             value={email}
@@ -35,12 +58,13 @@ export default function LoginScreen() {
             autoCapitalize="none"
             editable={!isLoading}
           />
+          {fieldErrors.email && <Text style={styles.fieldErrorText}>{fieldErrors.email}</Text>}
         </View>
 
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Password</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, fieldErrors.password && styles.inputError]}
             placeholder="Enter your password"
             placeholderTextColor="#8f6f6e"
             value={password}
@@ -48,6 +72,7 @@ export default function LoginScreen() {
             secureTextEntry
             editable={!isLoading}
           />
+          {fieldErrors.password && <Text style={styles.fieldErrorText}>{fieldErrors.password}</Text>}
         </View>
 
         {error && <Text style={styles.errorText}>{error}</Text>}
@@ -111,6 +136,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     fontSize: 16,
     color: '#271717',
+  },
+  inputError: {
+    borderColor: '#ba1a1a',
+  },
+  fieldErrorText: {
+    color: '#ba1a1a',
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
   },
   errorText: {
     color: '#ba1a1a',
